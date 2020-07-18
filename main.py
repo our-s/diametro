@@ -10,18 +10,17 @@ class Grafo(object):
         for i in range(grafo._vertice):
             grafo._adj.append([])
 
-        else:
-            with open(path, 'r') as arquivo:
-                grafo._vertice = int(arquivo.readline().rstrip('\n'))
-                for v in range(grafo._vertice):
-                    grafo._adj.append([])
-                grafo._aresta = int(arquivo.readline().rstrip('\n'))
+        with open(path, 'r') as arquivo:
+            grafo._vertice = int(arquivo.readline().rstrip('\n'))
+            for v in range(grafo._vertice):
+                grafo._adj.append([])
+            grafo._aresta = int(arquivo.readline().rstrip('\n'))
 
-                for i in range(grafo._aresta):
-                    linha = arquivo.readline().rstrip('\n')
-                    a, b = linha.split()
-                    grafo._adj[int(a)].append(int(b))
-                    grafo._adj[int(b)].append(int(a))
+            for i in range(grafo._aresta):
+                linha = arquivo.readline().rstrip('\n')
+                a, b = linha.split()
+                grafo._adj[int(a)].append(int(b))
+                grafo._adj[int(b)].append(int(a))
                     
     def obterVertice(grafo):
         return grafo._vertice
@@ -54,18 +53,16 @@ class Pilha(object):
 
 class BuscaEmLargura(object):
     def __init__(self, Grafo, vertice):
-        self._edgeTo = []
+        self._nos = []
         self._bandeira = []
         self._vertice = vertice
 
         for i in range(Grafo.obterVertice()):
             self._bandeira.append(False)
-            self._edgeTo.append(0)
-        
-        self._buscaEmLargura(Grafo, self.__vertice)
-
-    
-    def _buscaEmLargura(self, Grafo, vertice_original):
+            self._nos.append(0)       
+        self.buscaEmLargura(Grafo, self._vertice)
+   
+    def buscaEmLargura(self, Grafo, vertice_original):
         fila = Fila()
         self._bandeira[vertice_original] = True
         fila.enfileira(vertice_original)
@@ -74,22 +71,22 @@ class BuscaEmLargura(object):
             vertice = fila.desenfileira()
             for i in Grafo.obterAdj(vertice):
                 if not self._bandeira[i]:
-                    self._edgeTo[i] = vertice
+                    self._nos[i] = vertice
                     self._bandeira[i] = True
                     fila.enfileira(i)
 
     def caminho(self, vertice):
         pilha = Pilha()
-        x = vertice
-        if not self._bandeira[vertice]:
-            return []
+        vert = vertice
         
-        while x != self._vertice: 
-            pilha.empilha(x)
-            x = self._edgeTo[x]
-            
-        pilha.empilha(self._vertice)
-        return pilha
+        if self._bandeira[vertice]:
+            while vert != self._vertice: 
+                pilha.empilha(vert)
+                vert = self._nos[vert]    
+            pilha.empilha(self._vertice)
+            return pilha
+        else:
+            return []
 
 if __name__ == "__main__":
     inicio = time.time()
@@ -97,40 +94,40 @@ if __name__ == "__main__":
     dicionarioOrdenado = {}
     soma = 0
     pesos = 0
-    
     grafo = Grafo('traducao3.txt')
+    vertice = grafo.obterVertice()
 
-    for i in range(grafo.obterVertice()):
+    for i in range(vertice):
         buscaEmLargura = BuscaEmLargura(grafo, i)
-        for j in range(grafo.obterVertice()):
-            if i != j: 
+        for j in range(vertice):
+            if i == j: 
+                break
+            else:
                 pilha = buscaEmLargura.caminho(j)
-                if pilha != []:
+                if pilha == []:
+                    break
+                else:
                     distancia = pilha.tamanho() - 1
                     if distancia in dicionario.keys():
                         dicionario[distancia] = 1 + dicionario[distancia] 
                     else:
-                        dicionario[distancia] = 1           
-                        
+                        dicionario[distancia] = 1                        
     chaves = sorted(dicionario)  
     
     for i in chaves:
         dicionarioOrdenado[i] = int(dicionario[i] / 2)
         soma = (i * dicionarioOrdenado[i]) + soma
         pesos = dicionarioOrdenado[i] + pesos
-
     media = soma / pesos
-    
     fim = time.time()
-    print(f'Diâmetro médio: {media}')
-    
-    eixo_x = dicionarioOrdenado.keys()
+    print("Diâmetro médio: {:.2f}".format(media))
 
-    plt.bar(x=[i for i in range(1, len(eixo_x) + 1)], height = dicionarioOrdenado.values())
-    plt.xticks([i for i in range(1, len(eixo_x) + 1)], labels = eixo_x)
+    plt.bar(x=[i for i in range(1, len(dicionarioOrdenado.keys()) + 1)], height = dicionarioOrdenado.values())
+    plt.xticks([i for i in range(1, len(dicionarioOrdenado.keys()) + 1)], labels = dicionarioOrdenado.keys())
     plt.grid(axis = 'y', alpha = 0.5)
-    plt.title("Quantidade de distâncias entre pares de nós")
+    plt.title("Histograma das distâncias entre pares de nós")
     plt.xlabel("Distância")
-    plt.ylabel("Quantidade")    
-
-    print("Tempo de execução:" %(fim-inicio))
+    plt.ylabel("Quantidade")  
+    plt.savefig('Gráfico.png')
+    
+    print("Tempo de execução: {:.2f} segundos".format(fim-inicio))
